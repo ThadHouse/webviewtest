@@ -1,0 +1,139 @@
+    /*
+    let window = vscode.window.createWebview(vscode.Uri.parse('wpilib:riolog'), "RioLog", vscode.ViewColumn.Three, {
+        enableScripts: true,
+        enableCommandUris: true
+    });
+
+    window.html = `
+<ul id="list" style="list-style-type:none;padding:0;"></ul>   
+<button type="button" onclick="
+window.parent.postMessage({
+    type: 'click1'
+  }, '*');
+">Click Me!</button>
+<button type="button2" onclick="
+window.parent.postMessage({
+    type: 'click2'
+  }, '*');
+">Click 2!</button>
+
+<script>
+    window.addEventListener('message', event => {
+        if (event.data.type === 'print') {
+            var ul = document.getElementById("list");
+            var li = document.createElement("li");
+            li.innerHTML = event.data.text;
+            ul.appendChild(li);
+            document.body.scrollTop = document.body.scrollHeight
+        } else if (event.data.type === 'warning') {
+            var ul = document.getElementById("list");
+            var li = document.createElement("li");
+            li.setAttribute("style", "color:Yellow;")
+            li.innerHTML = event.data.text;
+            ul.appendChild(li);
+            document.body.scrollTop = document.body.scrollHeight
+        } else if (event.data.type === 'error') {
+            var ul = document.getElementById("list");
+            var li = document.createElement("li");
+            li.setAttribute("style", "color:Red;")
+            li.innerHTML = event.data.text;
+            ul.appendChild(li);
+            document.body.scrollTop = document.body.scrollHeight
+        } else if (event.data.type === 'clear') {
+            document.getElementById("list").innerHTML = "";
+        }
+    });
+</script>
+`;
+    /*
+
+    window.html = `
+    <!doctype html>
+    <script>
+    window.addEventListener('message', event => {
+        var x = document.getElementById("messages");
+        window.parent.postMessage(event.data);
+        //console.log(event.data);
+      });
+    </script>
+    
+    <html>
+      <head>
+        <title>Socket.IO chat</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font: 13px Helvetica, Arial; }
+          form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+          form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+          form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+          #messages { list-style-type: none; margin: 0; padding: 0; }
+          #messages li { padding: 5px 10px; }
+          #messages li:nth-child(odd) { background: #eee; }
+        </style>
+      </head>
+      <body>
+        <ul id="messages"></ul>
+        <form action="">
+          <input id="m" autocomplete="off" /><button>Send</button>
+        </form>
+      </body>
+    </html>
+    `;
+    */
+
+   let rioLog = new RioConsole();
+
+   window.onDidDispose(() => {
+    rioLog.stop();
+   }, null, context.subscriptions);
+
+   rioLog.addListener((m) => {
+    if (m instanceof PrintMessage) {
+        window.postMessage({
+            type: 'print',
+            text: m.line
+        });
+    } else if (m instanceof ErrorMessage) {
+        if (m.isError()) {
+            window.postMessage({
+                type: 'error',
+                text: m.details
+            });
+        } else {
+            window.postMessage({
+                type: 'warning',
+                text: m.details
+            });
+        }
+    }
+   });
+
+   rioLog.startListening(9999);
+    
+
+    let discard: boolean = false;
+
+    window.onDidReceiveMessage((data) => {
+        if (data.type === 'click1') {
+            if (discard === false) {
+                discard = true;
+                rioLog.setDiscard(true);
+            } else {
+                discard = false;
+                rioLog.setDiscard(false);
+            }
+            // Discard
+
+        } else if (data.type === 'click2') {
+            // Clear
+            window.postMessage({
+                type: 'clear'
+            });
+        }
+        //console.log(data);
+    }, null, context.subscriptions);
+
+
+
+    context.subscriptions.push(rioLog);
+    */
