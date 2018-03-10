@@ -332,7 +332,7 @@ onSaveLog();
         li.dataset.message = str;
         li.dataset.type = type;
         if (type === 'warning') {
-            insertMessage(message.details, li, 'Yellow');
+            insertMessage(message.timestamp, message.details, li, 'Yellow');
             li.dataset.type = 'warning';
             if (showWarnings === true) {
                 li.style.display = 'inline';
@@ -340,7 +340,7 @@ onSaveLog();
                 li.style.display = 'none';
             }
         } else {
-            insertMessage(message.details, li, 'Red');
+            insertMessage(message.timestamp, message.details, li, 'Red');
             li.dataset.type = 'error';
         }
         li.onclick = () => {
@@ -350,9 +350,9 @@ onSaveLog();
                 let parsed = JSON.parse(li.dataset.message);
                 li.innerHTML = '';
                 if (li.dataset.type === 'warning') {
-                    insertMessage(parsed.details, li, 'Yellow');
+                    insertMessage(parsed.timestamp, parsed.details, li, 'Yellow');
                 } else {
-                    insertMessage(parsed.details, li, 'Red');
+                    insertMessage(parsed.timestamp, parsed.details, li, 'Red');
                 }
             } else {
                 // expand
@@ -365,6 +365,7 @@ onSaveLog();
                     expandError(parsed, li, 'Red');
                 }
             }
+            checkResize();
         };
         ul.appendChild(li);
     }

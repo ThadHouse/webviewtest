@@ -9,6 +9,9 @@
 			true,
 			"always"
 		],
+		"await-promise": true,
+		"no-floating-promises": true,
+		"quotemark": [true, "single"],
 		"triple-equals": true
 	},
 	"defaultSeverity": "warning"

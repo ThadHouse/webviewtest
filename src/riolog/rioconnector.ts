@@ -55,7 +55,7 @@ interface ICancellableTimer {
 function timerPromise(ms: number): ICancellableTimer {
   let timer: NodeJS.Timer | undefined;
   return {
-    promise: new Promise((resolve, reject) => {
+    promise: new Promise((resolve, _) => {
       timer = timers.setTimeout(() => {
         resolve(undefined);
       }, ms);
