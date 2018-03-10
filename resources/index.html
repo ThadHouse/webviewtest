@@ -1,4 +1,6 @@
-<ul id="list" style="list-style-type:none;padding:0;position:fixed;bottom: 80px"></ul>
+<ul id="list" style="list-style-type:none;padding:0">
+</ul>
+<div style="height:80px;"></div>
 <ul style="position:fixed;bottom: 0px;left:0px;list-style-type:none;padding-bottom:0;padding-left:0;padding-top:0;padding-right:0;width: 49.8%; margin-bottom: 1px">
     <li style="margin-bottom: 2px">
         <button id="pause" type="button" onclick="
@@ -45,6 +47,17 @@ onSaveLog();
 </ul>
 
 <script>
+    function checkResize() {
+        let allowedHeight = document.documentElement.clientHeight - 80;
+        let ul = document.getElementById('list');
+        let listHeight = ul.clientHeight;
+        if (listHeight < allowedHeight) {
+            ul.style = 'list-style-type:none;padding:0;position:fixed;bottom:80px';
+        } else {
+            ul.style = 'list-style-type:none;padding:0'
+        }
+    }
+
     let paused = false;
     function onPause() {
         if (paused === true) {
@@ -107,6 +120,7 @@ onSaveLog();
                 }
             }
         }
+        checkResize();
     }
 
     let showPrints = true;
@@ -129,6 +143,7 @@ onSaveLog();
                 }
             }
         }
+        checkResize();
     }
 
     let autoReconnect = true;
@@ -177,6 +192,7 @@ onSaveLog();
                 }
             }
         }
+        checkResize();
     }
 
     function onSaveLog() {
@@ -383,5 +399,10 @@ onSaveLog();
         } else if (event.data.type === 'disconnected') {
             onDisconnect();
         }
+        checkResize();
+    });
+
+    addEventListener('resize', () => {
+        checkResize();
     });
 </script>
