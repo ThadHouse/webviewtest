@@ -7,16 +7,6 @@ export enum MessageType {
   Print
 }
 
-export class MessageRenderOptions {
-  showTimestamp: boolean = false;
-  timestampDecimals: number = 3;
-  showErrorCode: boolean = true;
-  showErrorLocation: boolean = true;
-  showErrorCallstack: boolean = true;
-  showWarningLocation: boolean = true;
-  showWarningCallstack: boolean = false;
-}
-
 export interface IMessage {
   getMessageType(): MessageType;
 }

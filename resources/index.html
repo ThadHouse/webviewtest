@@ -138,7 +138,30 @@ onSaveLog();
 
     let showTimestamps = false;
     function onShowTimestamps() {
-
+        if (showTimestamps === true) {
+            showTimestamps = false;
+            document.getElementById('timestamps').innerHTML = 'Show Timestamps';
+        } else {
+            showTimestamps = true;
+            document.getElementById('timestamps').innerHTML = 'Don\'t Show Timestamps';
+        }
+        let ul = document.getElementById("list");
+        let items = ul.getElementsByTagName("li");
+        for (let i = 0; i < items.length; ++i) {
+            let spans = items[i].getElementsByTagName('span');
+            if (spans === undefined) {
+                continue;
+            }
+            for (let span of spans) {
+                if (span.hasAttribute('data-timestamp')) {
+                    if (showTimestamps === true) {
+                        span.style.display = 'inline';
+                    } else {
+                        span.style.display = 'none';
+                    }
+                }
+            }
+        }
     }
 
     function onSaveLog() {
@@ -159,8 +182,18 @@ onSaveLog();
         }, '*');
     }
 
-    function insertMessage(line, li, color) {
+    function insertMessage(ts, line, li, color) {
         let div = document.createElement('div');
+        let tsSpan = document.createElement('span');
+        tsSpan.appendChild(document.createTextNode(ts.toFixed(3) + ': '));
+        tsSpan.dataset.timestamp = 'true';
+        if (showTimestamps === true) {
+            tsSpan.style.display = 'inline';
+        } else {
+            tsSpan.style.display = 'none';
+        }
+        div.appendChild(tsSpan);
+        let span = document.createElement('span');
         let split = line.split('\n');
         let first = true;
         for (let item of split) {
@@ -168,15 +201,16 @@ onSaveLog();
                 continue;
             }
             if (first === false) {
-                div.appendChild(document.createElement('br'));
+                span.appendChild(document.createElement('br'));
             }
             first = false;
             let tNode = document.createTextNode(item);
-            div.appendChild(tNode);
+            span.appendChild(tNode);
         }
         if (color !== undefined) {
-            div.style.color = color
+            span.style.color = color
         }
+        div.appendChild(span);
         li.appendChild(div);
     }
 
@@ -226,7 +260,7 @@ onSaveLog();
         let ul = document.getElementById("list");
         let li = document.createElement("li");
         li.style.fontFamily = '"Courier New", Courier, monospace'
-        insertMessage(message.line, li);
+        insertMessage(message.timestamp, message.line, li);
         let str = JSON.stringify(message);
         li.dataset.message = str;
         li.dataset.type = 'print';
@@ -240,7 +274,7 @@ onSaveLog();
 
     function expandError(message, li, color) {
         // First append the message
-        insertMessage(message.details, li, color);
+        insertMessage(message.timestamp, message.details, li, color);
         // Then append location, tabbed in once
         insertLocation(message.location, li);
         // Then append stack trace, tabbed in twice
