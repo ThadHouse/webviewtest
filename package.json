@@ -12,7 +12,7 @@
     ],
     "enableProposedApi": true,
     "activationEvents": [
-        "onCommand:extension.sayHello"
+        "*"
     ],
     "main": "./out/extension",
     "contributes": {
@@ -38,6 +38,7 @@
         "@types/mocha": "^2.2.42"
     },
     "dependencies": {
-        "jsonc-parser": "^1.0.3"
+        "jsonc-parser": "^1.0.3",
+        "why-is-node-running": "^2.0.2"
     }
 }

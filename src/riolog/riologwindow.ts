@@ -2,7 +2,7 @@
 
 import * as vscode from 'vscode';
 import { RioConsole } from './rioconsole';
-import { PrintMessage, ErrorMessage } from './message';
+import { PrintMessage, ErrorMessage, IMessage } from './message';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -42,7 +42,7 @@ export class RioLogWindow {
     this.webview!.onDidDispose(() => {
       if (this.riocon !== undefined) {
         this.riocon.stop();      
-        this.riocon.clearListener();  
+        this.riocon.removeAllListeners();  
       }
       this.riocon = undefined;
       this.webview = undefined;
@@ -72,7 +72,7 @@ export class RioLogWindow {
       }
     }, null, this.disposables);
 
-    this.riocon!.addListener((m) => {
+    this.riocon!.on('message', (m: IMessage) => {
       if (this.webview === undefined) {
         return;
       }

@@ -2,7 +2,8 @@
 import * as net from 'net';
 import * as timers from 'timers';
 import { connectToRobot } from './rioconnector';
-import { PrintMessage, ErrorMessage, IMessage, MessageType } from './message';
+import { PrintMessage, ErrorMessage, MessageType, IMessage } from './message';
+import { EventEmitter } from 'events';
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve, _) => {
@@ -12,7 +13,7 @@ function delay(ms: number): Promise<void> {
   });
 }
 
-export class RioConsole {
+export class RioConsole extends EventEmitter {
   private autoReconnect: boolean = true;
   private cleanup: boolean = false;
   private doReconnect: boolean = false;
@@ -20,7 +21,6 @@ export class RioConsole {
   private paused: boolean = false;
   private showWarning: boolean = true;
   private showPrint: boolean = true;
-  private callback: ((message: IMessage) => void) | undefined;
   promise: Promise<void> | undefined;
   private closeFunc: (() => void) | undefined;
 
@@ -75,12 +75,12 @@ export class RioConsole {
     this.showPrint = value;
   }
 
-  addListener(callback: (message: IMessage) => void) {
-    this.callback = callback;
+  emit(event: "message", message: IMessage): boolean {
+    return super.emit(event, message);
   }
 
-  clearListener() {
-    this.callback = undefined;
+  on(event: "message", listener: (message: IMessage) => void): this {
+    return super.on(event, listener);
   }
 
   private async connect(teamNumber: number): Promise<net.Socket | undefined> {
@@ -114,18 +114,13 @@ export class RioConsole {
     if (tag === 11) {
       // error or warning.
       let m = new ErrorMessage(outputBuffer);
-
-      if (this.callback !== undefined) {
-        let mType = m.getMessageType();
-        if (mType === MessageType.Error || (mType === MessageType.Warning && this.showWarning)) {
-          this.callback(m);
-        }
+      let mType = m.getMessageType();
+      if (mType === MessageType.Error || (mType === MessageType.Warning && this.showWarning)) {
+        this.emit('message', m);
       }
     } else if (tag === 12 && this.showPrint) {
       let m = new PrintMessage(outputBuffer);
-      if (this.callback !== undefined) {
-        this.callback(m);
-      }
+      this.emit('message', m);
     }
 
     if (extendedBuf.length > 0) {
@@ -160,7 +155,7 @@ export class RioConsole {
       socket!.on('close', () => {
         socket!.removeAllListeners();
         resolve();
-        console.log('closed remotely (close)');        
+        console.log('closed remotely (close)');
       });
       socket!.on('end', () => {
         socket!.removeAllListeners();
@@ -176,7 +171,7 @@ export class RioConsole {
         let oldR = this.doReconnect;
         this.doReconnect = false;
         if (oldR) {
-          while(!this.autoReconnect) {
+          while (!this.autoReconnect) {
             if (this.cleanup) {
               return;
             }
@@ -198,7 +193,7 @@ export class RioConsole {
 
   async dispose() {
     this.stop();
-    this.clearListener();
+    this.removeAllListeners();
     await this.promise;
   }
 }
