@@ -39,8 +39,6 @@ export class PrintMessage implements IMessage {
   getMessageType(): MessageType {
     return MessageType.Print;
   }
-
-
 }
 
 interface StringNumberPair {

@@ -6,6 +6,7 @@ import { PrintMessage, ErrorMessage, IMessage } from './message';
 import * as path from 'path';
 import * as fs from 'fs';
 
+
 interface MessageStore {
   type: string;
   message: IMessage;
@@ -48,8 +49,7 @@ export class RioLogWindow {
           messages: this.hiddenArray
         });
       }
-    });
-
+    }, null, this.disposables);
   }
 
   private createRioCon() {
@@ -97,8 +97,6 @@ export class RioLogWindow {
         } else {
           this.riocon.setDiscard(true);
         }
-        // Discard
-
       } else if (data.type === 'pause') {
         let old = this.paused;
         this.paused = data.value;
@@ -123,16 +121,6 @@ export class RioLogWindow {
             vscode.window.showTextDocument(d, this.webview.viewColumn);
           }
           console.log('opened file');
-        });
-      }
-
-      else if (data.type === 'click2') {
-        if (this.webview === undefined) {
-          return;
-        }
-        // Clear
-        this.webview.postMessage({
-          type: 'clear'
         });
       }
     }, null, this.disposables);

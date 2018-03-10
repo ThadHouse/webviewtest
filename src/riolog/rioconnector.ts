@@ -239,7 +239,7 @@ export async function connectToRobot(port: number, teamNumber: number, timeout: 
         try {
           await p.promise;
         } catch {
-  
+
         }
       }
     }
