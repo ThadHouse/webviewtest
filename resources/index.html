@@ -33,42 +33,103 @@ window.parent.postMessage({
 </ul>
 
 <script>
-    function filterLine(line, li) {
+    function insertMessage(line, li, color) {
+        let div = document.createElement('div');
         let split = line.split('\n');
         let first = true;
         for (let item of split) {
+            if (item.trim() === '') {
+                continue;
+            }
+            if (first === false) {
+                div.appendChild(document.createElement('br'));
+            }
+            first = false;
+            let tNode = document.createTextNode(item);
+            div.appendChild(tNode);
+        }
+        if (color !== undefined) {
+            div.style.color = color
+        }
+        li.appendChild(div);
+    }
+
+    function insertStackTrace(st, li, color) {
+        let div = document.createElement('div');
+        let split = st.split('\n');
+        let first = true;
+        for (let item of split) {
+            if (item.trim() === '') {
+                continue;
+            }
+            if (first === false) {
+                div.appendChild(document.createElement('br'));
+            }
+            first = false;
+            let tNode = document.createTextNode('\u00a0\u00a0\u00a0\u00a0 at: ' + item);
+            div.appendChild(tNode);
+        }
+        if (color !== undefined) {
+            div.style.color = color
+        }
+        li.appendChild(div);
+    }
+
+    function insertLocation(loc, li, color) {
+        let div = document.createElement('div');
+        let split = loc.split('\n');
+        let first = true;
+        for (let item of split) {
+            if (item.trim() === '') {
+                continue;
+            }
             if (first === false) {
                 li.appendChild(document.createElement('br'));
             }
             first = false;
-            li.appendChild(document.createTextNode(item));
+            let tNode = document.createTextNode('\u00a0\u00a0 from: ' + item);
+            li.appendChild(tNode);
         }
+        if (color !== undefined) {
+            div.style.color = color
+        }
+        li.appendChild(div);
     }
 
     function addPrint(message) {
         let ul = document.getElementById("list");
         let li = document.createElement("li");
         li.style.fontFamily = '"Courier New", Courier, monospace'
-        filterLine(message.line, li);
+        insertMessage(message.line, li);
         let str = JSON.stringify(message);
         li.dataset.message = str;
         li.dataset.type = 'print';
         ul.appendChild(li);
     }
 
+    function expandError(message, li, color) {
+        // First append the message
+        insertMessage(message.details, li, color);
+        // Then append location, tabbed in once
+        insertLocation(message.location, li);
+        // Then append stack trace, tabbed in twice
+        insertStackTrace(message.callStack, li);
+        li.appendChild(document.createElement('br'));
+    }
+
     function addError(message, type) {
         let ul = document.getElementById("list");
         let li = document.createElement("li");
         li.style.fontFamily = '"Courier New", Courier, monospace'
-        filterLine(message.details, li);
         let str = JSON.stringify(message);
         li.dataset.expanded = false;
         li.dataset.message = str;
+        li.dataset.type = type;
         if (type === 'warning') {
-            li.style.color = 'Yellow';
+            insertMessage(message.details, li, 'Yellow');
             li.dataset.type = 'warning';
         } else {
-            li.style.color = 'Red';
+            insertMessage(message.details, li, 'Red');
             li.dataset.type = 'error';
         }
         li.onclick = () => {
@@ -77,12 +138,21 @@ window.parent.postMessage({
                 li.dataset.expanded = false;
                 let parsed = JSON.parse(li.dataset.message);
                 li.innerHTML = '';
-                filterLine(message.details, li);
+                if (li.dataset.type === 'warning') {
+                    insertMessage(parsed.details, li, 'Yellow');
+                } else {
+                    insertMessage(parsed.details, li, 'Red');
+                }
             } else {
                 // expand
                 li.dataset.expanded = true;
+                let parsed = JSON.parse(li.dataset.message);
                 li.innerHTML = '';
-                li.appendChild(document.createTextNode('This is going to be expanded'));
+                if (li.dataset.type === 'warning') {
+                    expandError(parsed, li, 'Yellow');
+                } else {
+                    expandError(parsed, li, 'Red');
+                }
             }
         };
         ul.appendChild(li);
