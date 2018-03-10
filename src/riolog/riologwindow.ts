@@ -48,6 +48,17 @@ export class RioLogWindow {
           type: 'batch',
           messages: this.hiddenArray
         });
+        if (this.riocon !== undefined) {
+          if (this.riocon.connected === true) {
+            await this.webview.postMessage({
+              type: 'connected'
+            });
+          } else {
+            await this.webview.postMessage({
+              type: 'disconnected'
+            });
+          }
+        }
       }
     }, null, this.disposables);
   }
@@ -122,8 +133,28 @@ export class RioLogWindow {
           }
           console.log('opened file');
         });
+      } else if (data.type === 'reconnect') {
+        this.riocon.setAutoReconnect(data.value);
+        if (data.value === false) {
+          this.riocon.closeSocket();
+        }
       }
     }, null, this.disposables);
+
+    this.riocon!.on('connectionChanged', async (c: boolean) => {
+      if (this.webview === undefined) {
+        return;
+      }
+      if (c) {
+        await this.webview.postMessage({
+          type: 'connected'
+        });
+      } else {
+        await this.webview.postMessage({
+          type: 'disconnected'
+        });
+      }
+    });
 
     this.riocon!.on('message', async (m: IMessage) => {
       if (this.webview === undefined) {
