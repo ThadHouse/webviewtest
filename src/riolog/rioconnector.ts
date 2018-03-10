@@ -67,7 +67,7 @@ function timerPromise(ms: number): ICancellableTimer {
       console.log('cancelled timer');
       timers.clearTimeout(timer);
     }
-  }
+  };
 }
 
 class DSSocketPromisePair implements ISocketPromisePair {

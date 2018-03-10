@@ -1,5 +1,5 @@
 import { connectToRobot } from "./riolog/rioconnector";
-let log = require('why-is-node-running');
+//let log = require('why-is-node-running');
 
 
 let connector = connectToRobot(1741, 9999, 1000);

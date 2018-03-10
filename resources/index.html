@@ -1,38 +1,164 @@
-<ul id="list" style="list-style-type:none;padding:0;position:fixed;bottom: 40px"></ul>
+<ul id="list" style="list-style-type:none;padding:0;position:fixed;bottom: 80px"></ul>
 <ul style="position:fixed;bottom: 0px;left:0px;list-style-type:none;padding-bottom:0;padding-left:0;padding-top:0;padding-right:0;width: 49.8%; margin-bottom: 1px">
     <li style="margin-bottom: 2px">
-        <button type="button" onclick="
-window.parent.postMessage({
-    type: 'pause'
-    }, '*');
+        <button id="pause" type="button" onclick="
+onPause();
 " style="width: 100%">Pause</button>
     </li>
     <li>
-        <button type="button" onclick="
-window.parent.postMessage({
-    type: 'click3'
-    }, '*');
-" style="width: 100%">Click 3!</button>
+        <button id="discard" type="button" onclick="
+onDiscard();
+" style="width: 100%">Discard</button>
+    </li>
+    <li>
+        <button id="clear" type="button" onclick="
+onClear();
+" style="width: 100%">Clear</button>
+    </li>
+    <li>
+        <button id="showprints" type="button" onclick="
+onShowPrints();
+" style="width: 100%">Don't Show Prints</button>
     </li>
 </ul>
 <ul style="position:fixed;bottom: 0px;right:0px;list-style-type:none;padding-bottom:0;padding-left:0;padding-top:0;padding-right:0;width: 49.8%;margin-bottom: 1px">
     <li style="margin-bottom: 2px">
-        <button type="button" onclick="
-window.parent.postMessage({
-    type: 'click2'
-    }, '*');
-" style="width: 100%">Click 2!</button>
+        <button id="showwarnings" type="button" onclick="
+onShowWarnings();
+" style="width: 100%">Don't Show Warnings</button>
+    </li>
+    <li>
+        <button id="autoreconnect" type="button" onclick="
+onAutoReconnect();
+" style="width: 100%">Disconnect</button>
+    </li>
+    <li>
+        <button id="timestamps" type="button" onclick="
+onShowTimestamps();
+" style="width: 100%">Show Timestamps</button>
     </li>
     <li>
         <button type="button" onclick="
-window.parent.postMessage({
-    type: 'click4'
-    }, '*');
-" style="width: 100%">Click 4!</button>
+onSaveLog();
+" style="width: 100%">Save Log</button>
     </li>
 </ul>
 
 <script>
+    let paused = false;
+    function onPause() {
+        if (paused === true) {
+            paused = false;
+            document.getElementById('pause').innerHTML = 'Pause';
+            window.parent.postMessage({
+                type: 'pause',
+                value: false
+            }, '*');
+        } else {
+            paused = true;
+            document.getElementById('pause').innerHTML = 'Paused: 0';
+            window.parent.postMessage({
+                type: 'pause',
+                value: true
+            }, '*');
+        }
+    }
+
+    let discard = false;
+    function onDiscard() {
+        if (discard === true) {
+            discard = false;
+            document.getElementById('discard').innerHTML = 'Discard';
+            window.parent.postMessage({
+                type: 'discard',
+                value: false
+            }, '*');
+        } else {
+            discard = true;
+            document.getElementById('discard').innerHTML = 'Resume';
+            window.parent.postMessage({
+                type: 'discard',
+                value: true
+            }, '*');
+        }
+    }
+
+    function onClear() {
+        document.getElementById("list").innerHTML = "";
+    }
+
+    let showWarnings = true;
+    function onShowWarnings() {
+        if (showWarnings === true) {
+            showWarnings = false;
+            document.getElementById('showwarnings').innerHTML = 'Show Warnings';
+        } else {
+            showWarnings = true;
+            document.getElementById('showwarnings').innerHTML = 'Don\'t Show Warnings';
+        }
+        let ul = document.getElementById("list");
+        let items = ul.getElementsByTagName("li");
+        for (let i = 0; i < items.length; ++i) {
+            if (items[i].dataset.type === 'warning') {
+                if (showWarnings === true) {
+                    items[i].style.display = 'inline';
+                } else {
+                    items[i].style.display = 'none';
+                }
+            }
+        }
+    }
+
+    let showPrints = true;
+    function onShowPrints() {
+        if (showPrints === true) {
+            showPrints = false;
+            document.getElementById('showprints').innerHTML = 'Show Prints';
+        } else {
+            showPrints = true;
+            document.getElementById('showprints').innerHTML = 'Don\'t Show Prints';
+        }
+        let ul = document.getElementById("list");
+        let items = ul.getElementsByTagName("li");
+        for (let i = 0; i < items.length; ++i) {
+            if (items[i].dataset.type === 'print') {
+                if (showPrints === true) {
+                    items[i].style.display = 'inline';
+                } else {
+                    items[i].style.display = 'none';
+                }
+            }
+        }
+    }
+
+    let autoReconnect = true;
+    function onAutoReconnect() {
+
+    }
+
+    let showTimestamps = false;
+    function onShowTimestamps() {
+
+    }
+
+    function onSaveLog() {
+        let ul = document.getElementById("list");
+        let items = ul.getElementsByTagName("li");
+        let logs = [];
+
+        for (let i = 0; i < items.length; ++i) {
+            logs.push({
+                type: items[i].dataset.type,
+                message: items[i].dataset.message
+            });
+        }
+
+        window.parent.postMessage({
+            type: 'save',
+            items: logs
+        }, '*');
+    }
+
     function insertMessage(line, li, color) {
         let div = document.createElement('div');
         let split = line.split('\n');
@@ -104,6 +230,11 @@ window.parent.postMessage({
         let str = JSON.stringify(message);
         li.dataset.message = str;
         li.dataset.type = 'print';
+        if (showPrints === true) {
+            li.style.display = 'inline';
+        } else {
+            li.style.display = 'none';
+        }
         ul.appendChild(li);
     }
 
@@ -128,6 +259,11 @@ window.parent.postMessage({
         if (type === 'warning') {
             insertMessage(message.details, li, 'Yellow');
             li.dataset.type = 'warning';
+            if (showWarnings === true) {
+                li.style.display = 'inline';
+            } else {
+                li.style.display = 'none';
+            }
         } else {
             insertMessage(message.details, li, 'Red');
             li.dataset.type = 'error';
@@ -161,15 +297,28 @@ window.parent.postMessage({
     window.addEventListener('message', event => {
         if (event.data.type === 'print') {
             addPrint(event.data.message);
-            document.body.scrollTop = document.body.scrollHeight
+            document.body.scrollTop = document.body.scrollHeight;
         } else if (event.data.type === 'warning') {
             addError(event.data.message, 'warning');
-            document.body.scrollTop = document.body.scrollHeight
+            document.body.scrollTop = document.body.scrollHeight;
         } else if (event.data.type === 'error') {
             addError(event.data.message, 'error');
-            document.body.scrollTop = document.body.scrollHeight
+            document.body.scrollTop = document.body.scrollHeight;
         } else if (event.data.type === 'clear') {
             document.getElementById("list").innerHTML = "";
+        } else if (event.data.type === 'batch') {
+            for (let message of event.data.messages) {
+                if (message.type === 'print') {
+                    addPrint(message.message);
+                } else if (message.type === 'warning') {
+                    addError(message.message, 'warning');
+                } else if (message.type === 'error') {
+                    addError(message.message, 'error');
+                }
+            }
+            document.body.scrollTop = document.body.scrollHeight;
+        } else if (event.data.type === 'pauseupdate') {
+            document.getElementById('pause').innerHTML = 'Paused: ' + event.data.count;
         }
     });
 </script>
