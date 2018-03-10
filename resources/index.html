@@ -3,9 +3,9 @@
     <li style="margin-bottom: 2px">
         <button type="button" onclick="
 window.parent.postMessage({
-    type: 'click1'
+    type: 'pause'
     }, '*');
-" style="width: 100%">Click Me!</button>
+" style="width: 100%">Pause</button>
     </li>
     <li>
         <button type="button" onclick="
@@ -33,26 +33,70 @@ window.parent.postMessage({
 </ul>
 
 <script>
+    function filterLine(line, li) {
+        let split = line.split('\n');
+        let first = true;
+        for (let item of split) {
+            if (first === false) {
+                li.appendChild(document.createElement('br'));
+            }
+            first = false;
+            li.appendChild(document.createTextNode(item));
+        }
+    }
+
+    function addPrint(message) {
+        let ul = document.getElementById("list");
+        let li = document.createElement("li");
+        li.style.fontFamily = '"Courier New", Courier, monospace'
+        filterLine(message.line, li);
+        let str = JSON.stringify(message);
+        li.dataset.message = str;
+        li.dataset.type = 'print';
+        ul.appendChild(li);
+    }
+
+    function addError(message, type) {
+        let ul = document.getElementById("list");
+        let li = document.createElement("li");
+        li.style.fontFamily = '"Courier New", Courier, monospace'
+        filterLine(message.details, li);
+        let str = JSON.stringify(message);
+        li.dataset.expanded = false;
+        li.dataset.message = str;
+        if (type === 'warning') {
+            li.style.color = 'Yellow';
+            li.dataset.type = 'warning';
+        } else {
+            li.style.color = 'Red';
+            li.dataset.type = 'error';
+        }
+        li.onclick = () => {
+            if (li.dataset.expanded === 'true') {
+                // shrink
+                li.dataset.expanded = false;
+                let parsed = JSON.parse(li.dataset.message);
+                li.innerHTML = '';
+                filterLine(message.details, li);
+            } else {
+                // expand
+                li.dataset.expanded = true;
+                li.innerHTML = '';
+                li.appendChild(document.createTextNode('This is going to be expanded'));
+            }
+        };
+        ul.appendChild(li);
+    }
+
     window.addEventListener('message', event => {
         if (event.data.type === 'print') {
-            var ul = document.getElementById("list");
-            var li = document.createElement("li");
-            li.innerHTML = event.data.message.line;
-            ul.appendChild(li);
+            addPrint(event.data.message);
             document.body.scrollTop = document.body.scrollHeight
         } else if (event.data.type === 'warning') {
-            var ul = document.getElementById("list");
-            var li = document.createElement("li");
-            li.setAttribute("style", "color:Yellow;")
-            li.innerHTML = event.data.message.details;
-            ul.appendChild(li);
+            addError(event.data.message, 'warning');
             document.body.scrollTop = document.body.scrollHeight
         } else if (event.data.type === 'error') {
-            var ul = document.getElementById("list");
-            var li = document.createElement("li");
-            li.setAttribute("style", "color:Red;")
-            li.innerHTML = event.data.message.details;
-            ul.appendChild(li);
+            addError(event.data.message, 'error');
             document.body.scrollTop = document.body.scrollHeight
         } else if (event.data.type === 'clear') {
             document.getElementById("list").innerHTML = "";
