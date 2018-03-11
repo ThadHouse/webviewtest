@@ -4,7 +4,7 @@
 import * as vscode from 'vscode';
 import { RioLogWindow } from './riolog/riologwindow';
 import * as path from 'path';
-import { RioLogHTMLProvider, RioLogWebviewProvider, LiveRioConsoleProvider, RioLogViewerHTMLProvider, RioLogViewerWebviewProvider, ViewerRioConsoleProvider } from './riolog/vscodeimpl';
+import { RioLogWebviewProvider, LiveRioConsoleProvider, RioLogViewerWebviewProvider, ViewerRioConsoleProvider } from './riolog/vscodeimpl';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -16,23 +16,16 @@ export async function activate(context: vscode.ExtensionContext) {
 
     let extensionResourceLocation = path.join(context.extensionPath, 'resources');
 
-    let htmlProvider = new RioLogHTMLProvider();
-
-    await htmlProvider.load(extensionResourceLocation);
-
-    let viewProvider = new RioLogWebviewProvider();
+    let viewProvider = new RioLogWebviewProvider(extensionResourceLocation);
 
     let rioConsoleProvider = new LiveRioConsoleProvider();
 
-    let window = new RioLogWindow(htmlProvider, viewProvider, rioConsoleProvider);
+    let window = new RioLogWindow(viewProvider, rioConsoleProvider);
 
-    let viewHtmlProvider = new RioLogViewerHTMLProvider();
-    await viewHtmlProvider.load(extensionResourceLocation);
-
-    let viewerViewProvider = new RioLogViewerWebviewProvider();
+    let viewerViewProvider = new RioLogViewerWebviewProvider(extensionResourceLocation);
     let rioConsoleViewerProvider = new ViewerRioConsoleProvider();
 
-    let window2 = new RioLogWindow(viewHtmlProvider, viewerViewProvider, rioConsoleViewerProvider);
+    let window2 = new RioLogWindow(viewerViewProvider, rioConsoleViewerProvider);
 
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand

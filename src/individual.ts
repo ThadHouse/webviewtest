@@ -1,4 +1,4 @@
-import { connectToRobot } from "./riolog/rioconnector";
+import { connectToRobot } from './riolog/rioconnector';
 //let log = require('why-is-node-running');
 
 

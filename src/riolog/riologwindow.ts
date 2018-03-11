@@ -1,7 +1,7 @@
 'use strict';
 
 import { IMessage } from './message';
-import { IWindowView, IDisposable, IHTMLProvider, IWindowProvider, IRioConsole, IRioConsoleProvider } from './interfaces';
+import { IWindowView, IDisposable, IWindowProvider, IRioConsole, IRioConsoleProvider } from './interfaces';
 
 
 interface MessageStore {
@@ -17,19 +17,16 @@ export class RioLogWindow {
   private pausedArray: MessageStore[] = [];
   private paused: boolean = false;
   private hiddenArray: MessageStore[] = [];
-  private htmlProvider: IHTMLProvider;
   private windowProvider: IWindowProvider;
   private rioConsoleProvider: IRioConsoleProvider;
 
-  constructor(htmlProv: IHTMLProvider, windowProv: IWindowProvider, rioConProivder: IRioConsoleProvider) {
-    this.htmlProvider = htmlProv;
+  constructor(windowProv: IWindowProvider, rioConProivder: IRioConsoleProvider) {
     this.windowProvider = windowProv;
     this.rioConsoleProvider = rioConProivder;
   }
 
   private createWebView() {
     this.webview = this.windowProvider.createWindowView();
-    this.webview.setHTML(this.htmlProvider.getHTML(), this.htmlProvider.getScripts());
     this.webview.on('windowActive', async () => {
       if (this.webview === undefined) {
         return;

@@ -1,9 +1,14 @@
 import * as vscode from 'vscode';
 import { EventEmitter } from 'events';
-import { IWindowView, IWindowProvider, IHTMLProvider, IRioConsoleProvider, IRioConsole } from './interfaces';
+import { IWindowView, IWindowProvider, IRioConsoleProvider, IRioConsole } from './interfaces';
 import * as path from 'path';
 import * as fs from 'fs';
 import { RioConsole } from './rioconsole';
+
+
+export interface IHTMLProvider {
+    getHTML(): string;
+}
 
 export class RioLogWindowView extends EventEmitter implements IWindowView {
     private webview: vscode.Webview;
@@ -35,16 +40,11 @@ export class RioLogWindowView extends EventEmitter implements IWindowView {
         }, null, this.disposables);
     }
 
-    setHTML(html: string, scripts: string): void {
-        let htmlString = `${html}
-<script>
-${scripts}
-</script>
-`;
-        this.webview.html = htmlString;
+    setHTML(html: string): void {
+        this.webview.html = html;
     }
-    postMessage(message: any): Thenable<boolean> {
-        return this.webview.postMessage(message);
+    async postMessage(message: any): Promise<boolean> {
+        return await this.webview.postMessage(message);
     }
     dispose() {
         for (let d of this.disposables) {
@@ -63,47 +63,44 @@ ${scripts}
 }
 
 export class RioLogWebviewProvider implements IWindowProvider {
+    private htmlProvider: RioLogHTMLProvider;
+
+    constructor(resourceRoot: string){
+        this.htmlProvider = new RioLogHTMLProvider(resourceRoot);
+    }
+
     createWindowView(): IWindowView {
-        return new RioLogWindowView('wpilib:riologlive', 'RioLog', vscode.ViewColumn.Three);
+        let wv = new RioLogWindowView('wpilib:riologlive', 'RioLog', vscode.ViewColumn.Three);
+        wv.setHTML(this.htmlProvider.getHTML());
+        return wv;
     }
 }
 
 export class RioLogViewerWebviewProvider implements IWindowProvider {
+    private htmlProvider: RioLogViewerHTMLProvider;
+
+    constructor(resourceRoot: string){
+        this.htmlProvider = new RioLogViewerHTMLProvider(resourceRoot);
+    }
+
     createWindowView(): IWindowView {
-        return new RioLogWindowView('wpilib:riologviewer', 'RioLogViewer', vscode.ViewColumn.Three);
+        let wv = new RioLogWindowView('wpilib:riologviewer', 'RioLogViewer', vscode.ViewColumn.Three);
+        wv.setHTML(this.htmlProvider.getHTML());
+        return wv;
     }
 }
 
 export class RioLogHTMLProvider implements IHTMLProvider {
     private html: string | undefined;
-    private js: string | undefined;
-
-    async load(resourceRoot: string): Promise<void> {
+    
+    constructor(resourceRoot: string) {
         let htmlFile = path.join(resourceRoot, 'live.html');
-        let jsFile = path.join(resourceRoot, 'scripts.js');
+        let scriptFile = path.join(resourceRoot, 'bundle.js');
 
-        let htmlPromise = new Promise<string>((resolve, reject) => {
-            fs.readFile(htmlFile, 'utf8', (err, data) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
-
-        let jsPromise = new Promise<string>((resolve, reject) => {
-            fs.readFile(jsFile, 'utf8', (err, data) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
-
-        this.html = await htmlPromise;
-        this.js = await jsPromise;
+        this.html = fs.readFileSync(htmlFile, 'utf8');
+        this.html += '\r\n<script>\r\n';
+        this.html += fs.readFileSync(scriptFile, 'ucs2');
+        this.html += '\r\n</script>\r\n';
     }
 
     getHTML(): string {
@@ -111,13 +108,6 @@ export class RioLogHTMLProvider implements IHTMLProvider {
             return '';
         }
         return this.html;
-    }
-    
-    getScripts() {
-        if (this.js === undefined) {
-            return '';
-        }
-        return this.js;
     }
 }
 
@@ -174,36 +164,17 @@ class RioLogViewer extends EventEmitter implements IRioConsole {
     }
 }
 
-export class RioLogViewerHTMLProvider implements IHTMLProvider {
-    private html: string | undefined;
-    private js: string | undefined;
+class RioLogViewerHTMLProvider implements IHTMLProvider {
+    private html: string;
 
-    async load(resourceRoot: string): Promise<void> {
-        let htmlFile = path.join(resourceRoot, 'viewer.html');
-        let jsFile = path.join(resourceRoot, 'scripts.js');
+    constructor(resourceRoot: string) {
+        let htmlFile = path.join(resourceRoot,'viewer.html');
+        let scriptFile = path.join(resourceRoot, 'bundle.js');
 
-        let htmlPromise = new Promise<string>((resolve, reject) => {
-            fs.readFile(htmlFile, 'utf8', (err, data) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
-
-        let jsPromise = new Promise<string>((resolve, reject) => {
-            fs.readFile(jsFile, 'utf8', (err, data) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
-
-        this.html = await htmlPromise;
-        this.js = await jsPromise;
+        this.html = fs.readFileSync(htmlFile, 'utf8');
+        this.html += '\r\n<script>\r\n';
+        this.html += fs.readFileSync(scriptFile, 'ucs2');
+        this.html += '\r\n</script>\r\n';
     }
 
     getHTML(): string {
@@ -211,12 +182,5 @@ export class RioLogViewerHTMLProvider implements IHTMLProvider {
             return '';
         }
         return this.html;
-    }
-    
-    getScripts() {
-        if (this.js === undefined) {
-            return '';
-        }
-        return this.js;
     }
 }
