@@ -1,8 +1,7 @@
 'use strict';
 
-import { RioConsole } from './rioconsole';
 import { PrintMessage, ErrorMessage, IMessage } from './message';
-import { IWindowView, IDisposable, IHTMLProvider, IWindowProvider } from './interfaces';
+import { IWindowView, IDisposable, IHTMLProvider, IWindowProvider, IRioConsole, IRioConsoleProvider } from './interfaces';
 
 
 interface MessageStore {
@@ -12,7 +11,7 @@ interface MessageStore {
 
 export class RioLogWindow {
   private webview: IWindowView | undefined = undefined;
-  private rioConsole: RioConsole | undefined = undefined;
+  private rioConsole: IRioConsole | undefined = undefined;
   private running: boolean = false;
   private disposables: IDisposable[] = [];
   private pausedArray: MessageStore[] = [];
@@ -20,10 +19,12 @@ export class RioLogWindow {
   private hiddenArray: MessageStore[] = [];
   private htmlProvider: IHTMLProvider;
   private windowProvider: IWindowProvider;
+  private rioConsoleProvider: IRioConsoleProvider;
 
-  constructor(htmlProv: IHTMLProvider, windowProv: IWindowProvider) {
+  constructor(htmlProv: IHTMLProvider, windowProv: IWindowProvider, rioConProivder: IRioConsoleProvider) {
     this.htmlProvider = htmlProv;
     this.windowProvider = windowProv;
+    this.rioConsoleProvider = rioConProivder;
   }
 
   private createWebView() {
@@ -53,7 +54,7 @@ export class RioLogWindow {
   }
 
   private createrioConsole() {
-    this.rioConsole = new RioConsole();
+    this.rioConsole = this.rioConsoleProvider.getRioConsole();
   }
 
   private async sendPaused() {
@@ -163,9 +164,9 @@ export class RioLogWindow {
     }
     if (data.type === 'discard') {
       if (data.value === false) {
-        this.rioConsole.setDiscard(false);
+        this.rioConsole.discard = false;
       } else {
-        this.rioConsole.setDiscard(true);
+        this.rioConsole.discard = true;
       }
     } else if (data.type === 'pause') {
       let old = this.paused;
@@ -189,7 +190,7 @@ export class RioLogWindow {
     } else if (data.type === 'reconnect') {
       this.rioConsole.setAutoReconnect(data.value);
       if (data.value === false) {
-        this.rioConsole.closeSocket();
+        this.rioConsole.disconnect();
       }
     }
   }

@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import { EventEmitter } from 'events';
-import { IWindowView, IWindowProvider, IHTMLProvider } from './interfaces';
+import { IWindowView, IWindowProvider, IHTMLProvider, IRioConsoleProvider, IRioConsole } from './interfaces';
 import * as path from 'path';
 import * as fs from 'fs';
+import { RioConsole } from './rioconsole';
 
 export class RioLogWindowView extends EventEmitter implements IWindowView {
     private webview: vscode.Webview;
@@ -51,10 +52,13 @@ ${scripts}
         }
     }
 
-    handleSave(_: any): Promise<boolean> {
-        return new Promise((resolve, _) => {
-            resolve();
+    async handleSave(saveData: any): Promise<boolean> {
+        let d = await vscode.workspace.openTextDocument({
+            language: 'json',
+            content: JSON.stringify(saveData, null, 4)
         });
+        await vscode.window.showTextDocument(d);
+        return true;
     }
 }
 
@@ -69,7 +73,7 @@ export class RioLogHTMLProvider implements IHTMLProvider {
     private js: string | undefined;
 
     async load(resourceRoot: string): Promise<void> {
-        let htmlFile = path.join(resourceRoot, 'index.html');
+        let htmlFile = path.join(resourceRoot, 'live.html');
         let jsFile = path.join(resourceRoot, 'scripts.js');
 
         let htmlPromise = new Promise<string>((resolve, reject) => {
@@ -92,7 +96,8 @@ export class RioLogHTMLProvider implements IHTMLProvider {
             });
         });
 
-        await Promise.all([htmlPromise, jsPromise]);
+        this.html = await htmlPromise;
+        this.js = await jsPromise;
     }
 
     getHTML(): string {
@@ -107,5 +112,11 @@ export class RioLogHTMLProvider implements IHTMLProvider {
             return '';
         }
         return this.js;
+    }
+}
+
+export class LiveRioConsoleProvider implements IRioConsoleProvider {
+    getRioConsole(): IRioConsole {
+        return new RioConsole();
     }
 }

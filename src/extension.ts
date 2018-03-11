@@ -4,7 +4,7 @@
 import * as vscode from 'vscode';
 import { RioLogWindow } from './riolog/riologwindow';
 import * as path from 'path';
-import { RioLogHTMLProvider, RioLogWebviewProvider } from './riolog/vscodeImpl';
+import { RioLogHTMLProvider, RioLogWebviewProvider, LiveRioConsoleProvider } from './riolog/vscodeimpl';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -22,7 +22,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
     let viewProvider = new RioLogWebviewProvider();
 
-    let window = new RioLogWindow(htmlProvider, viewProvider);
+    let rioConsoleProvider = new LiveRioConsoleProvider();
+
+    let window = new RioLogWindow(htmlProvider, viewProvider, rioConsoleProvider);
 
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
@@ -35,7 +37,12 @@ export async function activate(context: vscode.ExtensionContext) {
         //vscode.window.showInformationMessage('Hello World!');
     });
 
+    let disposable2 = vscode.commands.registerCommand('extension.viewer', () => {
+
+    });
+
     context.subscriptions.push(disposable);
+    context.subscriptions.push(disposable2);
     context.subscriptions.push(window);
 }
 

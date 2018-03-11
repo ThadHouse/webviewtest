@@ -4,39 +4,31 @@ import { connectToRobot } from './rioconnector';
 import { PrintMessage, ErrorMessage } from './message';
 import { EventEmitter } from 'events';
 import { PromiseCondition } from './promisecond';
+import { IRioConsole } from './interfaces';
 
-export class RioConsole extends EventEmitter {
+export class RioConsole extends EventEmitter implements IRioConsole {
   private autoReconnect: boolean = true;
   private cleanup: boolean = false;
-  private discard: boolean = false;
+  public discard: boolean = false;
   public connected: boolean = false;
   private promise: Promise<void> | undefined;
   private condition: PromiseCondition = new PromiseCondition();
   private closeFunc: (() => void) | undefined;
 
-  stop(): void {
+  public stop(): void {
     this.cleanup = true;
     this.closeSocket();
   }
 
-  getAutoReconnect(): boolean {
+  public getAutoReconnect(): boolean {
     return this.autoReconnect;
   }
 
-  setAutoReconnect(value: boolean): void {
+  public setAutoReconnect(value: boolean): void {
     this.autoReconnect = value;
     if (value === true) {
-      // TODO. Ping wakeup
       this.condition.set();
     }
-  }
-
-  getDiscard(): boolean {
-    return this.discard;
-  }
-
-  setDiscard(value: boolean): void {
-    this.discard = value;
   }
 
   private async connect(teamNumber: number): Promise<net.Socket | undefined> {
@@ -122,7 +114,7 @@ export class RioConsole extends EventEmitter {
     this.emit('connectionChanged', false);
   }
 
-  startListening(teamNumber: number): void {
+  public startListening(teamNumber: number): void {
     let asyncFunction = async () => {
       while (!this.cleanup) {
         while (!this.autoReconnect) {
@@ -145,7 +137,11 @@ export class RioConsole extends EventEmitter {
     }
   }
 
-  async dispose() {
+  public disconnect(): void {
+    this.closeSocket();
+  }
+
+  public async dispose() {
     this.stop();
     this.removeAllListeners();
     await this.promise;

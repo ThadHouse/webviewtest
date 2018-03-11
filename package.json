@@ -20,6 +20,10 @@
             {
                 "command": "extension.sayHello",
                 "title": "Hello World"
+            },
+            {
+                "command": "extension.viewer",
+                "title": "Create Viewer"
             }
         ]
     },
