@@ -4,73 +4,11 @@
 import * as vscode from 'vscode';
 import { RioLogWindow } from './riolog/riologwindow';
 import * as path from 'path';
-import * as fs from 'fs';
-import { IHTMLProvider, IWindowProvider, IWindowView } from './riolog/interfaces';
-import { EventEmitter } from 'events';
-
-class RioLogWindowView extends EventEmitter implements IWindowView {
-    private webview: vscode.Webview;
-    private disposables: vscode.Disposable[] = [];
-
-    constructor() {
-        super();
-        this.webview = vscode.window.createWebview(vscode.Uri.parse('wpilib:riolog'),
-            'RioLog', vscode.ViewColumn.Three, {
-                enableScripts: true,
-                enableCommandUris: true,
-                retainContextWhenHidden: true
-            });
-        
-        this.disposables.push(this.webview);
-        
-        vscode.window.onDidChangeActiveEditor(async (e) => {
-            if (e === this.webview) {
-                this.emit('windowActive');
-            }
-        }, null, this.disposables);
-
-        this.webview.onDidReceiveMessage((data) => {
-            this.emit('didReceiveMessage', data);
-        }, null, this.disposables);
-
-        this.webview.onDidDispose(() => {
-            this.emit('didDispose');
-        }, null, this.disposables);
-    }
-
-    setHTML(html: string, scripts: string): void {
-        let htmlString = `${html}
-<script>
-${scripts}
-</script>
-`;
-        this.webview.html = htmlString;
-    }
-    postMessage(message: any): Thenable<boolean> {
-        return this.webview.postMessage(message);
-    }
-    dispose() {
-        for (let d of this.disposables) {
-            d.dispose();
-        }
-    }
-
-    handleSave(_: any): Promise<boolean> {
-        return new Promise((resolve, _) => {
-            resolve();
-        });
-    }
-}
-
-class RioLogWebviewProvider implements IWindowProvider {
-    createWindowView(): IWindowView {
-        return new RioLogWindowView();
-    }
-}
+import { RioLogHTMLProvider, RioLogWebviewProvider } from './riolog/vscodeImpl';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
@@ -78,17 +16,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     let extensionResourceLocation = path.join(context.extensionPath, 'resources');
 
-    let html = fs.readFileSync(path.join(extensionResourceLocation, 'index.html'), 'utf8');
-    let js = fs.readFileSync(path.join(extensionResourceLocation, 'scripts.js'), 'utf8');
+    let htmlProvider = new RioLogHTMLProvider();
 
-    let htmlProvider: IHTMLProvider = {
-        getHTML() {
-            return html;
-        },
-        getScripts() {
-            return js;
-        }
-    };
+    await htmlProvider.load(extensionResourceLocation);
 
     let viewProvider = new RioLogWebviewProvider();
 
