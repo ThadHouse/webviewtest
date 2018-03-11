@@ -1,10 +1,8 @@
 'use strict';
 
-import * as vscode from 'vscode';
 import { RioConsole } from './rioconsole';
 import { PrintMessage, ErrorMessage, IMessage } from './message';
-import * as path from 'path';
-import * as fs from 'fs';
+import { IWindowView, IDisposable, IHTMLProvider, IWindowProvider } from './interfaces';
 
 
 interface MessageStore {
@@ -13,54 +11,45 @@ interface MessageStore {
 }
 
 export class RioLogWindow {
-  private webview: vscode.Webview | undefined = undefined;
+  private webview: IWindowView | undefined = undefined;
   private riocon: RioConsole | undefined = undefined;
   private running: boolean = false;
-  private disposables: vscode.Disposable[] = [];
-  private htmlFile: string;
+  private disposables: IDisposable[] = [];
   private pausedArray: MessageStore[] = [];
   private paused: boolean = false;
   private hiddenArray: MessageStore[] = [];
+  private htmlProvider: IHTMLProvider;
+  private windowProvider: IWindowProvider;
 
-  constructor(resourceRoot: string) {
-    this.htmlFile = path.join(resourceRoot, 'index.html');
+  constructor(htmlProv: IHTMLProvider, windowProv: IWindowProvider) {
+    this.htmlProvider = htmlProv;
+    this.windowProvider = windowProv;
   }
 
   private createWebView() {
-    this.webview = vscode.window.createWebview(vscode.Uri.parse('wpilib:riolog'), 'RioLog',
-      vscode.ViewColumn.Three,
-      {
-        enableScripts: true,
-        enableCommandUris: true,
-        retainContextWhenHidden: true,
-      }, );
-
-    this.webview.html = fs.readFileSync(this.htmlFile, 'utf8');
-
-
-    vscode.window.onDidChangeActiveEditor(async (e) => {
+    this.webview = this.windowProvider.createWindowView();
+    this.webview.setHTML(this.htmlProvider.getHTML(), this.htmlProvider.getScripts());
+    this.webview.on('windowActive', async () => {
       if (this.webview === undefined) {
         return;
       }
-      if (e === this.webview) {
-        // Window goes active.
-        await this.webview.postMessage({
-          type: 'batch',
-          messages: this.hiddenArray
-        });
-        if (this.riocon !== undefined) {
-          if (this.riocon.connected === true) {
-            await this.webview.postMessage({
-              type: 'connected'
-            });
-          } else {
-            await this.webview.postMessage({
-              type: 'disconnected'
-            });
-          }
+      // Window goes active.
+      await this.webview.postMessage({
+        type: 'batch',
+        messages: this.hiddenArray
+      });
+      if (this.riocon !== undefined) {
+        if (this.riocon.connected === true) {
+          await this.webview.postMessage({
+            type: 'connected'
+          });
+        } else {
+          await this.webview.postMessage({
+            type: 'disconnected'
+          });
         }
       }
-    }, null, this.disposables);
+    });
   }
 
   private createRioCon() {
@@ -88,7 +77,7 @@ export class RioLogWindow {
     this.running = true;
     this.createWebView();
     this.createRioCon();
-    this.webview!.onDidDispose(() => {
+    this.webview!.on('didDispose', () => {
       if (this.riocon !== undefined) {
         this.riocon.stop();
         this.riocon.removeAllListeners();
@@ -98,7 +87,7 @@ export class RioLogWindow {
       this.running = false;
     });
 
-    this.webview!.onDidReceiveMessage(async (data) => {
+    this.webview!.on('didReceiveMessage', async (data: any) => {
       if (this.riocon === undefined) {
         return;
       }
@@ -124,7 +113,8 @@ export class RioLogWindow {
           });
         }
         let serialized = JSON.stringify(deserializedLogs, null, 4);
-        vscode.workspace.openTextDocument({
+        console.log(serialized);
+        /*vscode.workspace.openTextDocument({
           language: 'json',
           content: serialized
         }).then((d) => {
@@ -133,13 +123,14 @@ export class RioLogWindow {
           }
           console.log('opened file');
         });
+        */
       } else if (data.type === 'reconnect') {
         this.riocon.setAutoReconnect(data.value);
         if (data.value === false) {
           this.riocon.closeSocket();
         }
       }
-    }, null, this.disposables);
+    });
 
     this.riocon!.on('connectionChanged', async (c: boolean) => {
       if (this.webview === undefined) {
