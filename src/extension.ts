@@ -54,6 +54,12 @@ ${scripts}
             d.dispose();
         }
     }
+
+    handleSave(_: any): Promise<boolean> {
+        return new Promise((resolve, _) => {
+            resolve();
+        });
+    }
 }
 
 class RioLogWebviewProvider implements IWindowProvider {
