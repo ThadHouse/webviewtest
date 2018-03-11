@@ -5,8 +5,20 @@
     "tasks": [
         {
             "type": "npm",
-            "script": "watch",
+            "script": "watchtsc",
             "problemMatcher": "$tsc-watch",
+            "isBackground": true,
+            "presentation": {
+                "reveal": "never"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true,
+            }
+        },
+        {
+            "type": "npm",
+            "script": "watchify",
             "isBackground": true,
             "presentation": {
                 "reveal": "never"

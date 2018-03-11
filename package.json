@@ -30,7 +30,8 @@
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./ && browserify ./out/riolog/sharedscript.js > ./resources/bundle.js",
-        "watch": "tsc -watch -p ./",
+        "watchtsc": "tsc -watch -p ./",
+        "watchify": "watchify ./out/riolog/sharedscript.js -o ./resources/bundle.js",
         "postinstall": "node ./node_modules/vscode/bin/install",
         "test": "npm run compile && node ./node_modules/vscode/bin/test"
     },

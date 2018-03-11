@@ -70,7 +70,7 @@ export class RioLogWindow {
 
   start(teamNumber: number) {
     if (this.running) {
-      return;
+      return;    
     }
     this.running = true;
     this.createWebView();
