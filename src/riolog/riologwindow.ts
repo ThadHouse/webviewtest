@@ -1,6 +1,6 @@
 'use strict';
 
-import { PrintMessage, ErrorMessage, IMessage } from './message';
+import { IMessage } from './message';
 import { IWindowView, IDisposable, IHTMLProvider, IWindowProvider, IRioConsole, IRioConsoleProvider } from './interfaces';
 
 
@@ -53,7 +53,7 @@ export class RioLogWindow {
     });
   }
 
-  private createrioConsole() {
+  private createRioConsole() {
     this.rioConsole = this.rioConsoleProvider.getRioConsole();
   }
 
@@ -77,7 +77,7 @@ export class RioLogWindow {
     }
     this.running = true;
     this.createWebView();
-    this.createrioConsole();
+    this.createRioConsole();
     this.webview!.on('didDispose', () => {
       if (this.rioConsole !== undefined) {
         this.rioConsole.stop();
@@ -118,18 +118,18 @@ export class RioLogWindow {
     }
   }
 
-  private async onNewMessageToSend(m: IMessage) {
+  private async onNewMessageToSend(m: any) {
     if (this.webview === undefined) {
       return;
     }
     let message: MessageStore | undefined = undefined;
-    if (m instanceof PrintMessage) {
+    if ('line' in m) {
       message = {
         type: 'print',
         message: m
       };
-    } else if (m instanceof ErrorMessage) {
-      if (m.isError()) {
+    } else if ('details' in m) {
+      if ((m.flags & 1) !== 0) {
         message = {
           type: 'error',
           message: m

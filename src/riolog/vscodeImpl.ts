@@ -9,10 +9,10 @@ export class RioLogWindowView extends EventEmitter implements IWindowView {
     private webview: vscode.Webview;
     private disposables: vscode.Disposable[] = [];
 
-    constructor() {
+    constructor(resourceName: string, windowName: string, viewColumn: vscode.ViewColumn) {
         super();
-        this.webview = vscode.window.createWebview(vscode.Uri.parse('wpilib:riolog'),
-            'RioLog', vscode.ViewColumn.Three, {
+        this.webview = vscode.window.createWebview(vscode.Uri.parse(resourceName),
+            windowName, viewColumn, {
                 enableScripts: true,
                 enableCommandUris: true,
                 retainContextWhenHidden: true
@@ -64,7 +64,13 @@ ${scripts}
 
 export class RioLogWebviewProvider implements IWindowProvider {
     createWindowView(): IWindowView {
-        return new RioLogWindowView();
+        return new RioLogWindowView('wpilib:riologlive', 'RioLog', vscode.ViewColumn.Three);
+    }
+}
+
+export class RioLogViewerWebviewProvider implements IWindowProvider {
+    createWindowView(): IWindowView {
+        return new RioLogWindowView('wpilib:riologviewer', 'RioLogViewer', vscode.ViewColumn.Three);
     }
 }
 
@@ -118,5 +124,99 @@ export class RioLogHTMLProvider implements IHTMLProvider {
 export class LiveRioConsoleProvider implements IRioConsoleProvider {
     getRioConsole(): IRioConsole {
         return new RioConsole();
+    }
+}
+
+export class ViewerRioConsoleProvider implements IRioConsoleProvider {
+    getRioConsole(): IRioConsole {
+        return new RioLogViewer();
+    }
+}
+
+class RioLogViewer extends EventEmitter implements IRioConsole {
+    connected: boolean = true;
+    discard: boolean = false;
+    stop(): void {
+        
+    }
+    startListening(_: number): void {
+        // Send everything
+        vscode.window.showOpenDialog({
+            canSelectFiles: true,
+            canSelectMany: false
+        }).then((v) => {
+            if (v === undefined) {
+                return;
+            }
+            if (v.length !== 1) {
+                return;
+            }
+            fs.readFile(v[0].fsPath, 'utf8', (err, data) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    let obj = JSON.parse(data);
+                    for (let o of obj) {
+                        this.emit('message', o.message);
+                    }
+                }
+            });
+        });
+    }
+    setAutoReconnect(_: boolean): void {
+    }
+    getAutoReconnect(): boolean {
+        return true;
+    }
+    disconnect(): void {
+    }
+    dispose() {
+    }
+}
+
+export class RioLogViewerHTMLProvider implements IHTMLProvider {
+    private html: string | undefined;
+    private js: string | undefined;
+
+    async load(resourceRoot: string): Promise<void> {
+        let htmlFile = path.join(resourceRoot, 'viewer.html');
+        let jsFile = path.join(resourceRoot, 'scripts.js');
+
+        let htmlPromise = new Promise<string>((resolve, reject) => {
+            fs.readFile(htmlFile, 'utf8', (err, data) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(data);
+                }
+            });
+        });
+
+        let jsPromise = new Promise<string>((resolve, reject) => {
+            fs.readFile(jsFile, 'utf8', (err, data) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(data);
+                }
+            });
+        });
+
+        this.html = await htmlPromise;
+        this.js = await jsPromise;
+    }
+
+    getHTML(): string {
+        if (this.html === undefined) {
+            return '';
+        }
+        return this.html;
+    }
+    
+    getScripts() {
+        if (this.js === undefined) {
+            return '';
+        }
+        return this.js;
     }
 }
