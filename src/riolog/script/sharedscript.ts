@@ -325,6 +325,28 @@ window.addEventListener('resize', () => {
     checkResize();
 });
 
+// tslint:disable-next-line:no-any
+function handleFileSelect(evt: any) {
+    let files: FileList = evt.target.files; // filelist
+    let firstFile = files[0];
+    let reader = new FileReader();
+    reader.onload = (loaded: Event) => {
+        let target: FileReader = <FileReader>loaded.target;
+        let parsed = JSON.parse(target.result);
+        for (let p of parsed) {
+            addMessage(p);
+        }
+    };
+    reader.readAsBinaryString(firstFile);
+    console.log(evt.target);
+    console.log(files);
+}
+
+let openFileButton = document.getElementById('open');
+if (openFileButton !== null) {
+    openFileButton.addEventListener('change', handleFileSelect, false);
+}
+
 let pauseButton = document.getElementById('pause');
 if (pauseButton !== null) {
     pauseButton.addEventListener('click', () => {
