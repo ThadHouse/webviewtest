@@ -34,6 +34,22 @@ export interface IWindowProvider {
 export interface IWindowView extends EventEmitter, IDisposable {
     postMessage(message: IIPCSendMessage): Promise<boolean>;
     handleSave(saveData: (IPrintMessage | IErrorMessage)[]): Promise<boolean>;
+
+    addListener(event: string, listener: Function): this;
+    addListener(event: 'didReceiveMessage', listener: (message: IIPCReceiveMessage) => void): this;
+    addListener(event: 'didDispose', listener: () => void): this;
+    addListener(event: 'windowActive', listener: () => void): this;
+
+    on(event: string, listener: Function): this;
+    on(event: 'didReceiveMessage', listener: (message: IIPCReceiveMessage) => void): this;
+    on(event: 'didDispose', listener: () => void): this;
+    on(event: 'windowActive', listener: () => void): this;
+
+    // tslint:disable-next-line:no-any
+    emit(event: string | symbol, ...args: any[]): boolean;
+    emit(event: 'didReceiveMessage', message: IIPCReceiveMessage): boolean;
+    emit(event: 'didDispose'): boolean;
+    emit(event: 'windowActive'): boolean;
 }
 
 export interface IDisposable {
@@ -48,6 +64,20 @@ export interface IRioConsole extends EventEmitter, IDisposable {
     startListening(teamNumber: number): void;
     setAutoReconnect(autoReconnect: boolean): void;
     getAutoReconnect(): boolean;
+
+    addListener(event: string, listener: Function): this;
+    addListener(event: 'message', listener: (message: IIPCSendMessage) => void): this;
+    addListener(event: 'connectionChanged', listener: (connected: boolean) => void): this;
+
+    on(event: string, listener: Function): this;
+    on(event: 'message', listener: (message: IIPCSendMessage) => void): this;
+    on(event: 'connectionChanged', listener: (connected: boolean) => void): this;
+
+    // tslint:disable-next-line:no-any
+    emit(event: string | symbol, ...args: any[]): boolean;
+    emit(event: 'message', message: IPrintMessage | IErrorMessage): boolean;
+    emit(event: 'connectionChanged', connected: boolean): boolean;
+
     disconnect(): void;
 }
 
