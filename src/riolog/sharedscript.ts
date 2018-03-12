@@ -1,23 +1,7 @@
 'use strict';
 
 import { IPrintMessage, IErrorMessage } from './message';
-import { sendMessage } from './implscript';
-
-export function checkResize() {
-    let allowedHeight = document.documentElement.clientHeight - 80;
-    let ul = document.getElementById('list');
-    if (ul === null) {
-        return;
-    }
-    let listHeight = ul.clientHeight;
-    if (listHeight < allowedHeight) {
-        ul.style.position = 'fixed';
-        ul.style.bottom = '80px';
-    } else {
-        ul.style.position = 'static';
-        ul.style.bottom = 'auto';
-    }
-}
+import { sendMessage, checkResize } from './implscript';
 
 let paused = false;
 export function onPause() {

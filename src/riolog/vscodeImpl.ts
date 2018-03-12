@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import { RioConsole } from './rioconsole';
 
 
-export interface IHTMLProvider {
+interface IHTMLProvider {
     getHTML(): string;
 }
 

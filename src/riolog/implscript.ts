@@ -1,6 +1,23 @@
 'use strict';
 
-import { addPrint, addError, onConnect, onDisconnect, checkResize, } from './sharedscript';
+import { addPrint, addError, onConnect, onDisconnect } from './sharedscript';
+
+export function checkResize() {
+    let allowedHeight = document.documentElement.clientHeight - 80;
+    let ul = document.getElementById('list');
+    if (ul === null) {
+        return;
+    }
+    let listHeight = ul.clientHeight;
+    console.log(`${allowedHeight} : ${listHeight}`);
+    if (listHeight < allowedHeight) {
+        ul.style.position = 'fixed';
+        ul.style.bottom = '80px';
+    } else {
+        ul.style.position = 'static';
+        ul.style.bottom = 'auto';
+    }
+}
 
 export function sendMessage(message: any) {
     window.parent.postMessage(message, '*');
