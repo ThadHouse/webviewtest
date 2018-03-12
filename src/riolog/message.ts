@@ -1,13 +1,15 @@
 'use strict';
 
-export const ErrorMessageType: string = 'error';
-export const WarningMessageType: string = 'warning';
-export const PrintMessageType: string = 'print';
+export enum MessageType {
+  Error,
+  Warning,
+  Print
+}
 
 export interface IMessage {
   readonly timestamp: number;
   readonly seqNumber: number;
-  readonly messageType: string;
+  readonly messageType: MessageType;
 }
 
 export interface IPrintMessage extends IMessage {
@@ -27,7 +29,7 @@ export class PrintMessage implements IPrintMessage {
   public readonly timestamp: number;
   public readonly seqNumber: number;
   public readonly line: string;
-  public readonly messageType: string = PrintMessageType;
+  public readonly messageType: MessageType = MessageType.Print;
 
   constructor(data: Buffer) {
     let count = 0;
@@ -54,7 +56,7 @@ export class ErrorMessage implements IMessage {
   public readonly details: string;
   public readonly location: string;
   public readonly callStack: string;
-  public readonly messageType: string;
+  public readonly messageType: MessageType;
 
   constructor(data: Buffer) {
     let count = 0;
@@ -78,9 +80,9 @@ export class ErrorMessage implements IMessage {
     this.callStack = tmp.data;
     count += tmp.byteLength;
     if ((this.flags & 1) !== 0) {
-      this.messageType = ErrorMessageType;
+      this.messageType = MessageType.Error;
     } else {
-      this.messageType = WarningMessageType;
+      this.messageType = MessageType.Warning;
     }
   }
 

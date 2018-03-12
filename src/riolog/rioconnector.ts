@@ -1,8 +1,8 @@
 'use strict';
+
 import * as net from 'net';
 import * as timers from 'timers';
 import * as jsonc from 'jsonc-parser';
-
 
 async function properRace<T>(promises: Promise<T>[]): Promise<T> {
   if (promises.length < 1) {

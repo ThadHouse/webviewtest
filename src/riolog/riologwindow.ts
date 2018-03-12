@@ -1,22 +1,16 @@
 'use strict';
 
-import { IMessage } from './message';
-import { IWindowView, IDisposable, IWindowProvider, IRioConsole, IRioConsoleProvider } from './interfaces';
-
-
-interface MessageStore {
-  type: string;
-  message: IMessage;
-}
+import { IPrintMessage, IErrorMessage } from './message';
+import { IWindowView, IDisposable, IWindowProvider, IRioConsole, IRioConsoleProvider, IIPCReceiveMessage, SendTypes, ReceiveTypes } from './interfaces';
 
 export class RioLogWindow {
   private webview: IWindowView | undefined = undefined;
   private rioConsole: IRioConsole | undefined = undefined;
   private running: boolean = false;
   private disposables: IDisposable[] = [];
-  private pausedArray: MessageStore[] = [];
+  private pausedArray: (IPrintMessage | IErrorMessage)[] = [];
   private paused: boolean = false;
-  private hiddenArray: MessageStore[] = [];
+  private hiddenArray: (IPrintMessage | IErrorMessage)[] = [];
   private windowProvider: IWindowProvider;
   private rioConsoleProvider: IRioConsoleProvider;
 
@@ -33,17 +27,19 @@ export class RioLogWindow {
       }
       // Window goes active.
       await this.webview.postMessage({
-        type: 'batch',
-        messages: this.hiddenArray
+        type: SendTypes.Batch,
+        message: this.hiddenArray
       });
       if (this.rioConsole !== undefined) {
         if (this.rioConsole.connected === true) {
           await this.webview.postMessage({
-            type: 'connected'
+            type: SendTypes.ConnectionChanged,
+            message: true
           });
         } else {
           await this.webview.postMessage({
-            type: 'disconnected'
+            type: SendTypes.ConnectionChanged,
+            message: false
           });
         }
       }
@@ -59,8 +55,8 @@ export class RioLogWindow {
       return;
     }
     let success = await this.webview.postMessage({
-      type: 'batch',
-      messages: this.pausedArray
+      type: SendTypes.Batch,
+      message: this.pausedArray
     });
     if (!success) {
       this.hiddenArray.push(...this.pausedArray);
@@ -85,7 +81,7 @@ export class RioLogWindow {
       this.running = false;
     });
 
-    this.webview!.on('didReceiveMessage', async (data: any) => {
+    this.webview!.on('didReceiveMessage', async (data: IIPCReceiveMessage) => {
       this.onMessageReceived(data);
     });
 
@@ -93,8 +89,8 @@ export class RioLogWindow {
       this.onConnectionChanged(c);
     });
 
-    this.rioConsole!.on('message', (m: IMessage) => {
-      this.onNewMessageToSend(m);
+    this.rioConsole!.on('message', (message: IPrintMessage | IErrorMessage) => {
+      this.onNewMessageToSend(message);
     });
 
     this.rioConsole!.startListening(teamNumber);
@@ -106,87 +102,68 @@ export class RioLogWindow {
     }
     if (connected) {
       await this.webview.postMessage({
-        type: 'connected'
+        type: SendTypes.ConnectionChanged,
+        message: true
       });
     } else {
       await this.webview.postMessage({
-        type: 'disconnected'
+        type: SendTypes.ConnectionChanged,
+        message: false
       });
     }
   }
 
-  private async onNewMessageToSend(m: any) {
+  private async onNewMessageToSend(message: IPrintMessage | IErrorMessage) {
     if (this.webview === undefined) {
-      return;
-    }
-    let message: MessageStore | undefined = undefined;
-    if ('line' in m) {
-      message = {
-        type: 'print',
-        message: m
-      };
-    } else if ('details' in m) {
-      if ((m.flags & 1) !== 0) {
-        message = {
-          type: 'error',
-          message: m
-        };
-      } else {
-        message = {
-          type: 'warning',
-          message: m
-        };
-      }
-    }
-    if (message === undefined) {
       return;
     }
     if (this.paused === true) {
       this.pausedArray.push(message);
       await this.webview.postMessage({
-        type: 'pauseupdate',
-        count: this.pausedArray.length
+        type: SendTypes.PauseUpdate,
+        message: this.pausedArray.length
       });
     } else {
-      let success = await this.webview.postMessage(message);
+      let success = await this.webview.postMessage({
+        type: SendTypes.New,
+        message: message
+      });
       if (!success) {
         this.hiddenArray.push(message);
       }
     }
   }
 
-  private async onMessageReceived(data: any): Promise<void> {
+  private async onMessageReceived(data: IIPCReceiveMessage): Promise<void> {
     if (this.rioConsole === undefined) {
       return;
     }
-    if (data.type === 'discard') {
-      if (data.value === false) {
+    if (data.type === ReceiveTypes.Discard) {
+      if (<boolean>data.message === false) {
         this.rioConsole.discard = false;
       } else {
         this.rioConsole.discard = true;
       }
-    } else if (data.type === 'pause') {
+    } else if (data.type === ReceiveTypes.Pause) {
       let old = this.paused;
-      this.paused = data.value;
-      if (old === true && data.value === false) {
+      this.paused = <boolean>data.message;
+      if (old === true && this.paused === false) {
         await this.sendPaused();
       }
-    } else if (data.type === 'save') {
+    } else if (data.type === ReceiveTypes.Save) {
       if (this.webview === undefined) {
         return;
       }
-      let deserializedLogs = [];
-      for (let d of data.items) {
-        let parsed = JSON.parse(d.message);
-        deserializedLogs.push({
-          type: d.type,
-          message: parsed
-        });
+      let deserializedLogs: (IPrintMessage | IErrorMessage)[] = [];
+      for (let d of <string[]>data.message) {
+        let parsed = JSON.parse(d);
+        deserializedLogs.push(parsed);
       }
       await this.webview.handleSave(deserializedLogs);
-    } else if (data.type === 'reconnect') {
-      this.rioConsole.setAutoReconnect(data.value);
-      if (data.value === false) {
+    } else if (data.type === ReceiveTypes.Reconnect) {
+      let newValue = <boolean>data.message;
+      this.rioConsole.setAutoReconnect(newValue);
+      if (newValue === false) {
         this.rioConsole.disconnect();
       }
     }

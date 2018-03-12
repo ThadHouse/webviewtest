@@ -1,7 +1,8 @@
 'use strict';
 
-import { IPrintMessage, IErrorMessage } from './message';
 import { sendMessage, checkResize } from './implscript';
+import { IPrintMessage, IErrorMessage, MessageType } from '../message';
+import { ReceiveTypes } from '../interfaces';
 
 let paused = false;
 export function onPause() {
@@ -9,15 +10,15 @@ export function onPause() {
         paused = false;
         document.getElementById('pause')!.innerHTML = 'Pause';
         sendMessage({
-            type: 'pause',
-            value: false
+            type: ReceiveTypes.Pause,
+            message: false
         });
     } else {
         paused = true;
         document.getElementById('pause')!.innerHTML = 'Paused: 0';
         sendMessage({
-            type: 'pause',
-            value: true
+            type: ReceiveTypes.Pause,
+            message: true
         });
     }
 }
@@ -28,15 +29,15 @@ export function onDiscard() {
         discard = false;
         document.getElementById('discard')!.innerHTML = 'Discard';
         sendMessage({
-            type: 'discard',
-            value: false
+            type: ReceiveTypes.Discard,
+            message: false
         });
     } else {
         discard = true;
         document.getElementById('discard')!.innerHTML = 'Resume';
         sendMessage({
-            type: 'discard',
-            value: true
+            type: ReceiveTypes.Discard,
+            message: true
         });
     }
 }
@@ -98,15 +99,15 @@ export function onAutoReconnect() {
         document.getElementById('autoreconnect')!.innerHTML = 'Reconnect';
         // send a disconnect
         sendMessage({
-            type: 'reconnect',
-            value: false
+            type: ReceiveTypes.Reconnect,
+            message: false
         });
     } else {
         autoReconnect = true;
         document.getElementById('autoreconnect')!.innerHTML = 'Disconnect';
         sendMessage({
-            type: 'reconnect',
-            value: true
+            type: ReceiveTypes.Reconnect,
+            message: true
         });
     }
 }
@@ -144,18 +145,15 @@ export function onShowTimestamps() {
 export function onSaveLog() {
     let ul = document.getElementById('list');
     let items = ul!.getElementsByTagName('li');
-    let logs = [];
+    let logs: string[] = [];
 
     for (let i = 0; i < items.length; ++i) {
-        logs.push({
-            type: items[i].dataset.type,
-            message: items[i].dataset.message
-        });
+        logs.push(items[i].dataset.message!);
     }
 
     sendMessage({
-        type: 'save',
-        items: logs
+        type: ReceiveTypes.Save,
+        message: logs
     });
 }
 
@@ -243,6 +241,14 @@ function insertLocation(loc: string, li: HTMLLIElement, color?: string) {
     li.appendChild(div);
 }
 
+export function addMessage(message: IPrintMessage | IErrorMessage) {
+    if (message.messageType === MessageType.Print) {
+        addPrint(<IPrintMessage>message);
+    } else {
+        addError(<IErrorMessage>message);
+    }
+}
+
 export function addPrint(message: IPrintMessage) {
     let ul = document.getElementById('list');
     let li = document.createElement('li');
@@ -269,25 +275,24 @@ export function expandError(message: IErrorMessage, li: HTMLLIElement, color?: s
     li.appendChild(document.createElement('br'));
 }
 
-export function addError(message: IErrorMessage, type: string) {
+export function addError(message: IErrorMessage) {
     let ul = document.getElementById('list');
     let li = document.createElement('li');
     li.style.fontFamily = '"Courier New", Courier, monospace';
     let str = JSON.stringify(message);
     li.dataset.expanded = 'false';
     li.dataset.message = str;
-    li.dataset.type = type;
-    if (type === 'warning') {
-        insertMessage(message.timestamp, message.details, li, 'Yellow');
+    if (message.messageType === MessageType.Warning) {
         li.dataset.type = 'warning';
+        insertMessage(message.timestamp, message.details, li, 'Yellow');
         if (showWarnings === true) {
             li.style.display = 'inline';
         } else {
             li.style.display = 'none';
         }
     } else {
-        insertMessage(message.timestamp, message.details, li, 'Red');
         li.dataset.type = 'error';
+        insertMessage(message.timestamp, message.details, li, 'Red');
     }
     li.onclick = () => {
         if (li.dataset.expanded === 'true') {

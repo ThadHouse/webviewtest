@@ -1,9 +1,12 @@
+'use strict';
+
 import * as vscode from 'vscode';
 import { EventEmitter } from 'events';
-import { IWindowView, IWindowProvider, IRioConsoleProvider, IRioConsole } from './interfaces';
+import { IWindowView, IWindowProvider, IRioConsoleProvider, IRioConsole, IIPCSendMessage, IIPCReceiveMessage } from './interfaces';
 import * as path from 'path';
 import * as fs from 'fs';
 import { RioConsole } from './rioconsole';
+import { IPrintMessage, IErrorMessage } from './message';
 
 
 interface IHTMLProvider {
@@ -31,7 +34,7 @@ export class RioLogWindowView extends EventEmitter implements IWindowView {
             }
         }, null, this.disposables);
 
-        this.webview.onDidReceiveMessage((data) => {
+        this.webview.onDidReceiveMessage((data: IIPCReceiveMessage) => {
             this.emit('didReceiveMessage', data);
         }, null, this.disposables);
 
@@ -43,7 +46,7 @@ export class RioLogWindowView extends EventEmitter implements IWindowView {
     setHTML(html: string): void {
         this.webview.html = html;
     }
-    async postMessage(message: any): Promise<boolean> {
+    async postMessage(message: IIPCSendMessage): Promise<boolean> {
         return await this.webview.postMessage(message);
     }
     dispose() {
@@ -52,7 +55,7 @@ export class RioLogWindowView extends EventEmitter implements IWindowView {
         }
     }
 
-    async handleSave(saveData: any): Promise<boolean> {
+    async handleSave(saveData: (IPrintMessage | IErrorMessage)[]): Promise<boolean> {
         let d = await vscode.workspace.openTextDocument({
             language: 'json',
             content: JSON.stringify(saveData, null, 4)
@@ -147,7 +150,7 @@ class RioLogViewer extends EventEmitter implements IRioConsole {
                 } else {
                     let obj = JSON.parse(data);
                     for (let o of obj) {
-                        this.emit('message', o.message);
+                        this.emit('message', o);
                     }
                 }
             });

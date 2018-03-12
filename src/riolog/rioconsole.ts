@@ -1,4 +1,5 @@
 'use strict';
+
 import * as net from 'net';
 import { connectToRobot } from './rioconnector';
 import { PrintMessage, ErrorMessage } from './message';
