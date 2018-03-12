@@ -99,7 +99,7 @@ export class RioLogHTMLProvider implements IHTMLProvider {
 
         this.html = fs.readFileSync(htmlFile, 'utf8');
         this.html += '\r\n<script>\r\n';
-        this.html += fs.readFileSync(scriptFile, 'ucs2');
+        this.html += fs.readFileSync(scriptFile, 'utf8');
         this.html += '\r\n</script>\r\n';
     }
 
@@ -173,7 +173,7 @@ class RioLogViewerHTMLProvider implements IHTMLProvider {
 
         this.html = fs.readFileSync(htmlFile, 'utf8');
         this.html += '\r\n<script>\r\n';
-        this.html += fs.readFileSync(scriptFile, 'ucs2');
+        this.html += fs.readFileSync(scriptFile, 'utf8');
         this.html += '\r\n</script>\r\n';
     }
 

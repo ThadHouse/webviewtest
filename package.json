@@ -30,22 +30,20 @@
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./ && browserify ./out/riolog/sharedscript.js > ./resources/bundle.js",
-        "watchtsc": "tsc -watch -p ./",
-        "watchify": "watchify ./out/riolog/sharedscript.js -o ./resources/bundle.js",
         "postinstall": "node ./node_modules/vscode/bin/install",
         "test": "npm run compile && node ./node_modules/vscode/bin/test"
     },
     "devDependencies": {
+        "@types/mocha": "^2.2.42",
+        "@types/node": "^7.0.43",
+        "browserify": "^16.1.1",
+        "concurrently": "^3.5.1",
+        "tslint": "^5.8.0",
         "typescript": "^2.6.1",
         "vscode": "^1.1.6",
-        "tslint": "^5.8.0",
-        "@types/node": "^7.0.43",
-        "@types/mocha": "^2.2.42",
-        "browserify": "^16.1.1",
         "watchify": "^3.11.0"
     },
     "dependencies": {
-        "jsonc-parser": "^1.0.3",
-        "why-is-node-running": "^2.0.2"
+        "jsonc-parser": "^1.0.3"
     }
 }
