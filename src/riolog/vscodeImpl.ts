@@ -148,7 +148,7 @@ class RioLogViewer extends EventEmitter implements IRioConsole {
                 if (err) {
                     console.log(err);
                 } else {
-                    let obj = JSON.parse(data);
+                    let obj: (IPrintMessage | IErrorMessage)[] = JSON.parse(data);
                     for (let o of obj) {
                         this.emit('message', o);
                     }
